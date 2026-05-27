@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ÑarkiMundatio</title>
+<style>
+  :root {
+    --bg:      #0f1109;
+    --surface: #191d10;
+    --border:  #292e1a;
+    --accent:  #d4a86a;
+    --accent2: #b08848;
+    --text:    #d8d4c8;
+    --muted:   #6e6a58;
+    --ok:      #8fc44c;
+    --warn:    #e8c46a;
+    --err:     #e05252;
+    --radius:  8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+  header {
+    padding: 18px 32px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  header h1 { font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: .5px; }
+  header p  { color: var(--muted); font-size: 12px; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    height: calc(100vh - 57px);
+  }
+  .panel {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-section {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-section:last-child { border-bottom: none; flex: 1; }
+  .main {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow: hidden;
+  }
+
+  /* section labels */
+  .sec-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .9px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  /* file list */
+  .file-list { display: flex; flex-direction: column; gap: 6px; }
+  .file-card {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .file-card:hover  { border-color: var(--accent); background: rgba(212,168,106,.05); }
+  .file-card.active { border-color: var(--accent); background: rgba(212,168,106,.1); }
+  .file-card .fname { font-size: 12px; font-weight: 600; color: var(--text); word-break: break-all; }
+  .file-card .fmeta { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+  .file-card .ftag  {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    padding: 1px 6px; border-radius: 3px; margin-right: 4px; margin-top: 4px;
+    background: rgba(212,168,106,.15); color: var(--accent);
+    border: 1px solid rgba(212,168,106,.3);
+  }
+  .empty { color: var(--muted); font-size: 12px; font-style: italic; padding: 8px 0; }
+
+  /* options */
+  .opt-grid { display: flex; flex-direction: column; gap: 7px; }
+  .opt-row  {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .opt-row:hover { border-color: var(--accent); }
+  .opt-row input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; }
+  .opt-row .opt-label { flex: 1; padding-left: 8px; }
+  .opt-row .opt-hint  { font-size: 10px; color: var(--muted); margin-left: 6px; }
+
+  .mode-tabs { display: flex; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; }
+  .mode-tab  {
+    flex: 1; padding: 7px; text-align: center; cursor: pointer;
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    background: transparent; border: none;
+    transition: background .15s, color .15s;
+  }
+  .mode-tab.active { background: var(--accent); color: #1a1200; }
+
+  .btn-run {
+    width: 100%; padding: 11px;
+    background: var(--accent); color: #1a1200;
+    border: none; border-radius: var(--radius);
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    letter-spacing: .3px; transition: background .15s;
+    margin-top: 4px;
+  }
+  .btn-run:hover    { background: var(--accent2); color: #fff; }
+  .btn-run:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+  /* right main */
+  .log-header { display: flex; align-items: center; justify-content: space-between; }
+  .log-header h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .9px; color: var(--muted); }
+  #clear-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 11px; }
+  #clear-btn:hover { color: var(--text); }
+
+  #log {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    overflow-y: auto;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  .ll { padding: 1px 0; }
+  .ll.info  { color: var(--text); }
+  .ll.warn  { color: var(--warn); }
+  .ll.error { color: var(--err); }
+  .ll.ok    { color: var(--ok); }
+  .ll.prog  { color: var(--muted); }
+
+  #progress-bar-wrap {
+    height: 3px; background: var(--border); border-radius: 2px;
+    overflow: hidden; display: none;
+  }
+  #progress-bar-wrap.visible { display: block; }
+  #progress-bar { height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+
+  #result-box {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; background: var(--surface);
+    display: none; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  #result-box.visible { display: flex; }
+  #result-stats { font-size: 13px; }
+  #result-stats strong { color: var(--ok); font-size: 16px; }
+  .btn-dl {
+    padding: 8px 18px; background: var(--ok); color: #0f1109;
+    border: none; border-radius: var(--radius);
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    text-decoration: none; transition: opacity .15s;
+  }
+  .btn-dl:hover { opacity: .85; }
+
+  /* output files tab */
+  #out-files-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .out-card {
+    padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+    font-size: 11px;
+  }
+  .out-card .oname { font-weight: 600; color: var(--accent); word-break: break-all; }
+  .out-card .ometa { color: var(--muted); margin-top: 2px; line-height: 1.5; }
+  .out-card a { color: var(--ok); text-decoration: none; font-size: 10px; }
+  .out-card a:hover { text-decoration: underline; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🐱 ÑarkiMundatio</h1>
+  <p><em>ñarki</em> (gato, mapudungun) + <em>mundatio</em> (limpieza, latín) &mdash; estandarización de textos</p>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT PANEL -->
+  <div class="panel">
+
+    <!-- Input files from CulpemCorpus -->
+    <div class="panel-section">
+      <div class="sec-label">CSV de CulpemCorpus</div>
+      <div class="file-list" id="file-list">
+        <div class="empty">Buscando archivos…</div>
+      </div>
+    </div>
+
+    <!-- Cleaning options -->
+    <div class="panel-section">
+      <div class="sec-label">Opciones de limpieza</div>
+      <div class="opt-grid">
+        <label class="opt-row">
+          <input type="checkbox" id="opt-html" checked>
+          <span class="opt-label">Eliminar HTML/etiquetas</span>
+        </label>
+        <label class="opt-row">
+          <input type="checkbox" id="opt-junk" checked>
+          <span class="opt-label">Eliminar URLs, emails, líneas basura</span>
+        </label>
+        <label class="opt-row">
+          <input type="checkbox" id="opt-punct">
+          <span class="opt-label">Limpiar puntuación decorativa</span>
+          <span class="opt-hint">""«»()[]…</span>
+        </label>
+        <label class="opt-row">
+          <input type="checkbox" id="opt-accents">
+          <span class="opt-label">Eliminar acentos</span>
+          <span class="opt-hint">á→a</span>
+        </label>
+        <label class="opt-row">
+          <input type="checkbox" id="opt-n">
+          <span class="opt-label">Reemplazar ñ → n</span>
+        </label>
+        <label class="opt-row">
+          <input type="checkbox" id="opt-lower">
+          <span class="opt-label">Minúsculas</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Mode + run -->
+    <div class="panel-section">
+      <div class="sec-label">Unidad de exportación</div>
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="article" onclick="setMode('article')">Por artículo</button>
+        <button class="mode-tab" data-mode="phrase" onclick="setMode('phrase')">Por frase</button>
+      </div>
+      <button class="btn-run" id="run-btn" onclick="startProcess()" disabled>
+        Selecciona un archivo
+      </button>
+    </div>
+
+    <!-- Output files -->
+    <div class="panel-section">
+      <div class="sec-label">Salidas de ÑarkiMundatio</div>
+      <div id="out-files-list"><div class="empty">Sin exportaciones aún.</div></div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: log -->
+  <div class="main">
+    <div class="log-header">
+      <h2>Log de procesamiento</h2>
+      <button id="clear-btn" onclick="clearLog()">limpiar</button>
+    </div>
+    <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+    <div id="log">
+      <div class="ll info">Listo. Selecciona un CSV de la izquierda para comenzar.</div>
+    </div>
+    <div id="result-box">
+      <div id="result-stats"></div>
+      <a id="dl-link" class="btn-dl" href="#" download>Descargar CSV</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let selectedFile = null;
+let currentMode  = 'article';
+let running      = false;
+let evtSrc       = null;
+
+async function loadFiles() {
+  try {
+    const r = await fetch('/files');
+    const d = await r.json();
+    const list = document.getElementById('file-list');
+    if (!d.files.length) {
+      list.innerHTML = '<div class="empty">Sin archivos de CulpemCorpus encontrados.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    d.files.forEach(f => {
+      const m = f.meta;
+      const tags = [];
+      if (m.query)    tags.push(m.query);
+      if (m.sources)  tags.push(m.sources.join(', '));
+      if (m.n_articles) tags.push(m.n_articles + ' art.');
+      if (m.created_at) tags.push(m.created_at.slice(0,10));
+
+      const card = document.createElement('div');
+      card.className = 'file-card';
+      card.dataset.name = f.name;
+      card.innerHTML = `
+        <div class="fname">${f.name}</div>
+        <div class="fmeta">
+          ${(f.size/1024).toFixed(1)} KB
+          ${tags.map(t => `<span class="ftag">${t}</span>`).join('')}
+        </div>`;
+      card.onclick = () => selectFile(f.name, card);
+      list.appendChild(card);
+    });
+  } catch(e) { console.error(e); }
+}
+
+async function loadOutputFiles() {
+  try {
+    const r = await fetch('/narki_files');
+    const d = await r.json();
+    const wrap = document.getElementById('out-files-list');
+    if (!d.files.length) {
+      wrap.innerHTML = '<div class="empty">Sin exportaciones aún.</div>';
+      return;
+    }
+    wrap.innerHTML = '';
+    d.files.forEach(f => {
+      const m = f.meta;
+      const card = document.createElement('div');
+      card.className = 'out-card';
+      card.innerHTML = `
+        <div class="oname">${f.name}</div>
+        <div class="ometa">
+          ${m.n_output ?? '?'} filas · modo: ${m.mode ?? '?'}
+          · ${m.created_at ? m.created_at.slice(0,10) : ''}
+          <br><a href="/download/${f.name}" download>↓ csv</a>
+          &nbsp;<a href="/download/${f.name.replace('.csv','.json')}" download>↓ json</a>
+        </div>`;
+      wrap.appendChild(card);
+    });
+  } catch(e) {}
+}
+
+function selectFile(name, cardEl) {
+  selectedFile = name;
+  document.querySelectorAll('.file-card').forEach(c => c.classList.remove('active'));
+  cardEl.classList.add('active');
+  const btn = document.getElementById('run-btn');
+  btn.disabled = false;
+  btn.textContent = `Procesar ${name}`;
+}
+
+function setMode(m) {
+  currentMode = m;
+  document.querySelectorAll('.mode-tab').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+}
+
+function clearLog() { document.getElementById('log').innerHTML = ''; }
+
+function log(msg, cls = 'info') {
+  const el   = document.getElementById('log');
+  const line = document.createElement('div');
+  line.className = `ll ${cls}`;
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function startProcess() {
+  if (running) return;
+  if (!selectedFile) return;
+
+  const opts = new URLSearchParams({
+    file:           selectedFile,
+    mode:           currentMode,
+    remove_html:    document.getElementById('opt-html').checked ? '1' : '0',
+    remove_junk:    document.getElementById('opt-junk').checked ? '1' : '0',
+    clean_punct:    document.getElementById('opt-punct').checked ? '1' : '0',
+    remove_accents: document.getElementById('opt-accents').checked ? '1' : '0',
+    replace_n:      document.getElementById('opt-n').checked ? '1' : '0',
+    lowercase:      document.getElementById('opt-lower').checked ? '1' : '0',
+  });
+
+  clearLog();
+  document.getElementById('result-box').classList.remove('visible');
+  document.getElementById('progress-bar-wrap').classList.add('visible');
+  document.getElementById('progress-bar').style.width = '0';
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('run-btn').textContent = 'Procesando…';
+  running = true;
+
+  evtSrc = new EventSource('/process?' + opts.toString());
+
+  evtSrc.onmessage = function(e) {
+    const d = JSON.parse(e.data);
+    if (d.type === 'log') {
+      log(d.msg, d.level === 'error' ? 'error' : d.level === 'warn' ? 'warn' : d.level === 'ok' ? 'ok' : 'info');
+    } else if (d.type === 'progress') {
+      const pct = Math.round((d.done / d.total) * 100);
+      document.getElementById('progress-bar').style.width = pct + '%';
+      log(`  [${d.done}/${d.total}]`, 'prog');
+    } else if (d.type === 'done') {
+      done(d);
+    }
+  };
+  evtSrc.onerror = () => { if (running) { log('Stream ended.', 'warn'); resetBtn(); } };
+}
+
+function done(data) {
+  evtSrc && evtSrc.close();
+  resetBtn();
+  document.getElementById('progress-bar-wrap').classList.remove('visible');
+  if (data.count > 0) {
+    const box = document.getElementById('result-box');
+    document.getElementById('result-stats').innerHTML =
+      `<strong>${data.count}</strong> filas &mdash; ${data.file}`;
+    const lnk = document.getElementById('dl-link');
+    lnk.href = '/download/' + data.file;
+    lnk.download = data.file;
+    box.classList.add('visible');
+    loadOutputFiles();
+  }
+}
+
+function resetBtn() {
+  running = false;
+  const btn = document.getElementById('run-btn');
+  btn.disabled = !selectedFile;
+  btn.textContent = selectedFile ? `Procesar ${selectedFile}` : 'Selecciona un archivo';
+}
+
+loadFiles();
+loadOutputFiles();
+</script>
+</body>
+</html>

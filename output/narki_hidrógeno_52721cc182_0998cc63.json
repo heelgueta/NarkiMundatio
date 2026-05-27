@@ -1,0 +1,15 @@
+{
+  "created_at": "2026-05-27T14:32:16.040837Z",
+  "source_file": "culpem_hidrógeno_52721cc182.csv",
+  "mode": "article",
+  "options": {
+    "remove_html": true,
+    "remove_junk": true,
+    "remove_accents": true,
+    "replace_n": true,
+    "lowercase": true
+  },
+  "n_input": 264,
+  "n_output": 264,
+  "file": "narki_hidrógeno_52721cc182_0998cc63.csv"
+}

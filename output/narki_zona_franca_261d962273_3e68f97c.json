@@ -1,0 +1,15 @@
+{
+  "created_at": "2026-05-27T17:01:45.343968Z",
+  "source_file": "culpem_zona_franca_261d962273.csv",
+  "mode": "article",
+  "options": {
+    "remove_html": true,
+    "remove_junk": true,
+    "remove_accents": true,
+    "replace_n": true,
+    "lowercase": true
+  },
+  "n_input": 183,
+  "n_output": 183,
+  "file": "narki_zona_franca_261d962273_3e68f97c.csv"
+}

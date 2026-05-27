@@ -1,0 +1,15 @@
+{
+  "created_at": "2026-05-27T14:44:56.453517Z",
+  "source_file": "culpem_boric_bbf60b314b.csv",
+  "mode": "phrase",
+  "options": {
+    "remove_html": true,
+    "remove_junk": true,
+    "remove_accents": true,
+    "replace_n": true,
+    "lowercase": true
+  },
+  "n_input": 642,
+  "n_output": 16099,
+  "file": "narki_boric_bbf60b314b_frases_06c2a74b.csv"
+}
