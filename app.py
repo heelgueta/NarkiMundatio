@@ -21,6 +21,8 @@ from pathlib import Path
 from flask import Flask, Response, jsonify, render_template, request, send_file
 from flask import stream_with_context
 
+import yene_io
+
 app = Flask(__name__)
 HERE       = Path(__file__).parent.resolve()
 OUTPUT_DIR = HERE / "output"
@@ -129,6 +131,8 @@ def files():
                 "mtime": f.stat().st_mtime,
                 "meta":  meta,
             })
+    # Yene archives (SQLite) — read-only article sources for cleaning
+    result.extend(yene_io.list_yene_sources())
     return jsonify({"files": result,
                     "culpem_dir": str(culpem_dir) if culpem_dir else None})
 
@@ -180,20 +184,24 @@ def process():
     if not filename or ".." in filename or "/" in filename or "\\" in filename:
         return jsonify({"error": "Invalid filename"}), 400
 
-    culpem_dir = find_culpem_output()
-    if not culpem_dir:
-        return jsonify({"error": "CulpemCorpus output not found"}), 404
-
-    filepath = culpem_dir / filename
-    if not filepath.exists():
-        return jsonify({"error": "File not found"}), 404
+    yene_mode = yene_io.is_yene_name(filename)
+    if not yene_mode:
+        culpem_dir = find_culpem_output()
+        if not culpem_dir:
+            return jsonify({"error": "CulpemCorpus output not found"}), 404
+        filepath = culpem_dir / filename
+        if not filepath.exists():
+            return jsonify({"error": "File not found"}), 404
 
     def generate():
         yield _sse({"type": "log", "level": "info", "msg": f"Leyendo {filename}…"})
 
         try:
-            with open(filepath, encoding="utf-8-sig", newline="") as f:
-                all_rows = list(csv.DictReader(f))
+            if yene_mode:
+                all_rows = yene_io.load_yene_rows(filename)
+            else:
+                with open(filepath, encoding="utf-8-sig", newline="") as f:
+                    all_rows = list(csv.DictReader(f))
         except Exception as e:
             yield _sse({"type": "log", "level": "error", "msg": f"Error al leer: {e}"})
             yield _sse({"type": "done", "count": 0, "file": None})
@@ -247,7 +255,7 @@ def process():
             return
 
         job_id  = uuid.uuid4().hex[:8]
-        stem    = re.sub(r"^culpem_", "", filename.rsplit(".", 1)[0])
+        stem    = re.sub(r"^(culpem|yene)_", "", filename.rsplit(".", 1)[0])
         suffix  = "_frases" if mode == "phrase" else ""
         out_name = f"narki_{stem}{suffix}_{job_id}.csv"
         out_path = OUTPUT_DIR / out_name
